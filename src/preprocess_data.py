@@ -1,12 +1,3 @@
-"""
-Get file from data/
-then check what is the format per each game
-only read games of rating > 1400
-make sure to not overflow the memory (8gb batches)
-save up correct games into different file named "<year><month>_preprocessed_games_<amount_of_games>.pgn.zst"
-after that, make sure to compress the file and move it to data/preprocessed/
-"""
-
 import os
 import io
 import math
@@ -49,17 +40,13 @@ def parse_pgn_game(lines: Iterator[str]) -> list[dict[str, str]]:
         lines: List of lines representing a game
 
     Returns:
-        Dictionary with game metadata and moves
+        List of dictionaries with game metadata and moves
     """
     game_data: list[dict[str, str]] = []
     moves = []
 
     lines: list[str] = list(lines)
 
-    # treat these values as offsets per each game
-    # line 19 is moves
-    # line 20 is empty
-    # line 21 is next game
     for i in range(math.ceil(len(lines) / 20)):
         current_game_data = {}
         current_line = lines[i * 20 : (i + 1) * 20]
@@ -83,16 +70,22 @@ def parse_pgn_game(lines: Iterator[str]) -> list[dict[str, str]]:
 
 
 def parse_moves(moves_pre: str):
-    # Sample
-    # 1. e4 { [%clk 0:02:00] } 1... c5 { [%clk 0:02:00] } 2. Nc3 { [%clk 0:01:59] } 2... d6 { [%clk 0:02:00] }
-    # remove {} and all inside
-    # get the \d. and \d...
-    # then get first element from splitting with spaces
+    """
+    Parses chess moves
+
+    Args:
+        moves_pre: Raw line of all moves
+
+    Returns:
+        List of tuple (round number, move)
+    """
     moves: list[tuple[str, str]] = []
 
     # Remove last 3 characters with result '0-1' or '1-0'
     moves_pre = moves_pre[:-5].strip()
     for line in moves_pre.split("}"):
+        if len(line.strip().split(" ")) <= 1:
+            continue
         round = line.strip().split(".")[0]
         move = line.strip().split(" ")[1]
         moves.append((round, move))
@@ -134,7 +127,7 @@ def main():
 
     LINES_PER_GAME = 20
 
-    data = read_zst_file_streaming(file_path, max_lines=4 * LINES_PER_GAME)
+    data = read_zst_file_streaming(file_path, max_lines=1000 * LINES_PER_GAME)
     parsed_data = parse_pgn_game(data)
     print(parsed_data)
 
