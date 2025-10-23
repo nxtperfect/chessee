@@ -63,7 +63,7 @@ def parse_pgn_game(lines: Iterator[str]) -> list[dict[str, str]]:
         current_game_data["opening"] = (
             current_line[14].removeprefix("Opening ").replace('"', "").strip()
         )
-        print(current_line[18])
+        # print(current_line[18])
         current_game_data["moves"] = parse_moves(current_line[18])
         game_data.append(current_game_data)
     return game_data
@@ -114,28 +114,29 @@ def filter_games_by_rating(game_data: dict, min_rating: int = 1400) -> bool:
 
 
 def main():
-    file_path = "data/lichess_db_standard_rated_2022-12.pgn.zst"
+    for i in range(12, 0, -1):
+        file_path = f"data/lichess_db_standard_rated_2022-{i:02d}.pgn.zst"
 
-    if not os.path.exists(file_path):
-        print(f"File {file_path} not found!")
-        return
+        if not os.path.exists(file_path):
+            print(f"File {file_path} not found!")
+            return
 
-    print("Reading .zst file in chunks of 500 lines...")
+        print(f"Reading {file_path} file in chunks of 500 lines...")
 
-    print("Alternative: Streaming line by line")
-    print("=" * 50)
+        print("Alternative: Streaming line by line")
+        print("=" * 50)
 
-    LINES_PER_GAME = 20
+        LINES_PER_GAME = 20
+        MAX_GAMES = 10_000
 
-    data = read_zst_file_streaming(file_path, max_lines=1000 * LINES_PER_GAME)
-    parsed_data = parse_pgn_game(data)
-    print(parsed_data)
+        data = read_zst_file_streaming(file_path, max_lines=MAX_GAMES * LINES_PER_GAME)
+        parsed_data = parse_pgn_game(data)
+        # print(parsed_data)
 
-    with open("data/preprocessed/merged.pgn", "w") as f:
-        for data in parsed_data:
-            _ = f.write(str(data) + ",\n")
+        with open(f"data/preprocessed/{i:02d}-merged.pgn", "w") as f:
+            for data in parsed_data:
+                _ = f.write(str(data) + ",\n")
 
 
 if __name__ == "__main__":
     main()
-
